@@ -111,7 +111,7 @@ for t in range(T):
                 continue
             if Q[jiedian[j]][kehu[i]] < qos_constraint:
                 #分配总带宽不超过节点带宽上限
-                if W[jiedian[j]][t] < C[jiedian[j]]:
+                if W[jiedian[j]][t] <= C[jiedian[j]]:
                     #节点还能承受的带宽
                     rest = C[jiedian[j]] - W[jiedian[j]][t]
                     if rest >= int(orginal/count[kehu[i]]):
@@ -157,7 +157,7 @@ for t in range(T):
             # 满足约束条件
             if Q[jiedian[j]][kehu[i]] < qos_constraint:
                 # 分配总带宽不超过节点带宽上限
-                if W[jiedian[j]][t] < C[jiedian[j]]:
+                if W[jiedian[j]][t] <= C[jiedian[j]]:
                     # 节点还能承受的带宽
                     rest = C[jiedian[j]] - W[jiedian[j]][t]
                     if rest >= D[kehu[i]][t]:
@@ -176,14 +176,14 @@ for t in range(T):
                     continue
             if X[kehu[i]][jiedian[j]] != 0:
                 res.append('<{},{}>'.format(jiedian[j], X[kehu[i]][jiedian[j]]))
-        # if D[kehu[i]][t] != 0:
-        #     print(D[kehu[i]][t])
+        if D[kehu[i]][t] != 0:
+            print(D[kehu[i]][t])
         print(','.join(res), file=solution)
-s = 0
-for j in range(jiedian_number):
-    #总带宽排序
-    W[jiedian[j]].sort()
-    s += W[jiedian[j]][int(T*0.95)]
+# s = 0
+# for j in range(jiedian_number):
+#     #总带宽排序
+#     W[jiedian[j]].sort()
+#     s += W[jiedian[j]][int(T*0.95)]
 # print(s)
 
 
