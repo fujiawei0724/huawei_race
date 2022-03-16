@@ -1,8 +1,39 @@
 
 import numpy as np
-from collections import defaultdict
 # 导包
 import configparser
+
+class IniDict:
+    def __init__(self, type=int):
+        self.type_ = type
+        self.dict_ = dict()
+
+    
+    def __getitem__(self, key):
+        if key not in self.dict_:
+            if self.type_ == list:
+                self.dict_.update({key: []})
+            elif self.type_ == int:
+                self.dict_.update({key: 0})
+            elif self.type_ == str:
+                self.dict_.update({key: ''})
+            else:
+                print(self.type_)
+                raise TypeError('Specific type is not definited.')
+        return self.dict_[key]
+    
+    def __setitem__(self, key, value):
+        if type(value) != self.type_:
+            raise TypeError('Assignment type is illegal.')
+        self.dict_[key] = value
+    
+    def __contains__(self, key):
+        return key in self.dict_
+
+    def update(self, item):
+        self.dict_.update(item)
+
+
 
 
 config = configparser.ConfigParser() # 类实例化
@@ -20,7 +51,7 @@ with open('./data/demand.csv','rb') as f:
     kehu = data[0][1:]
     kehu_number = len(kehu)
     T = len(data[1:])
-    D = defaultdict(list)
+    D = IniDict(list)
     #客户宽带需求
     for i in range(T):
         for j in range(kehu_number):
@@ -31,7 +62,7 @@ with open('./data/site_bandwidth.csv','rb') as s:
     #边缘节点名称
     jiedian = []
     #边缘节点带宽上限
-    C = defaultdict()
+    C = IniDict()
     for i in range(jiedian_number):
         jiedian.append(data1[i+1][0])
         C[data1[i+1][0]] = int(data1[i+1][1])
@@ -43,12 +74,12 @@ def addtwodimdict(thedict, key_a, key_b, val):
 with open('./data/qos.csv','rb') as q:
     data2 = np.loadtxt(q,str,delimiter=',')
     # Q[边缘节点][客户节点]=qos
-    Q = defaultdict(int)
+    Q = IniDict(int)
     for i in range(len(data2)-1):
         for j in  range(len(data2[0])-1):
             # Q[data[0][i+1]][data[j+1][0]] = int(data[i+1][j+1])
             addtwodimdict(Q,data2[i+1][0],data2[0][j+1],int(data2[i+1][j+1]))
-count = defaultdict(int)
+count = IniDict(int)
 #统计t时刻对应i节点符合要求的边缘节点数，然后进行平均分配
 for i in range(kehu_number):
     for j in range(jiedian_number):
@@ -58,13 +89,13 @@ for i in range(kehu_number):
 solution = open('./output/solution.txt','w')
 #初始化j节点t时刻总带宽
 # print(jiedian_number)
-W = defaultdict(list)
+W = IniDict(list)
 for j in range(jiedian_number):
     for t in range(T):
         W[jiedian[j]].append(0)
 for t in range(T):
     # X[客户节点][边缘节点]为分配带宽，先初始化为0
-    X = defaultdict(int)
+    X = IniDict(int)
     for i in range(len(data2)-1):
         for j in  range(len(data2[0])-1):
             addtwodimdict(X, data2[0][j + 1], data2[i + 1][0], 0)
