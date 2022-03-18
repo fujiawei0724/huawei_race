@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-18 13:30:33
+LastEditTime: 2022-03-18 13:49:19
 Description: 
 '''
 import numpy as np
@@ -158,9 +158,12 @@ if __name__ == '__main__':
                 # 满足约束条件
                 if Q[jiedian[j]][kehu[i]] < qos_constraint:
                     # 分配总带宽不超过节点带宽上限
-                    if W[jiedian[j]][t] <= C[jiedian[j]]:
+                    cur_bandwidth_maximum = C[jiedian[j]]
+                    if jiedian[j] == sel_edge_node:
+                        cur_bandwidth_maximum = sel_edge_node_avail_bandwidth
+                    if W[jiedian[j]][t] <= cur_bandwidth_maximum:
                         # 节点还能承受的带宽
-                        rest = C[jiedian[j]] - W[jiedian[j]][t]
+                        rest = cur_bandwidth_maximum - W[jiedian[j]][t]
                         if rest >= D[kehu[i]][t]:
                             # 分配带宽
                             X[kehu[i]][jiedian[j]] += D[kehu[i]][t]
@@ -184,7 +187,7 @@ if __name__ == '__main__':
         #总带宽排序
         W[jiedian[j]].sort()
         s += W[jiedian[j]][int(T*0.95)]
-    # print(s)
+    print(s)
     # print(W)
     # print(D)
     # print(X)
