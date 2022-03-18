@@ -34,14 +34,14 @@ class Tools:
 if __name__ == '__main__':
     config = configparser.ConfigParser() # 类实例化
     # 定义参数文件路径
-    path = './data/config.ini'
+    path = '/data/config.ini'
     config.read(path)
     # 导入参数配置
     qos_constraint = int(config.get('config','qos_constraint'))
     # print(qos_constraint)
     # qos_constraint = 400
     #客户
-    with open('./data/demand.csv','rb') as f:
+    with open('/data/demand.csv','rb') as f:
         data = np.loadtxt(f, str, delimiter=",")
         #客户名称
         kehu = data[0][1:]
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         for i in range(T):
             for j in range(kehu_number):
                 D[kehu[j]].append(int(data[i+1][j+1]))
-    with open('./data/site_bandwidth.csv','rb') as s:
+    with open('/data/site_bandwidth.csv','rb') as s:
         data1 = np.loadtxt(s,str,delimiter=",")
         jiedian_number = len(data1[1:])
         #边缘节点名称
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         for i in range(jiedian_number):
             jiedian.append(data1[i+1][0])
             C[data1[i+1][0]] = int(data1[i+1][1])
-    with open('./data/qos.csv','rb') as q:
+    with open('/data/qos.csv','rb') as q:
         data2 = np.loadtxt(q,str,delimiter=',')
         # Q[边缘节点][客户节点]=qos
         Q = defaultdict(int)
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     # print(connection)
     # allocation_record = dict()
 
-    solution = open('./output/solution.txt','w')
+    solution = open('/output/solution.txt','w')
 
     W = defaultdict(list)
     for j in range(jiedian_number):
@@ -131,25 +131,27 @@ if __name__ == '__main__':
         fully_loaded_numbers[sel_edge_node] += 1
 
         # Start allocation
-        sel_edge_node_avail_bandwidth = C[sel_edge_node]
+        sel_edge_node_avail_bandwidth = int( C[sel_edge_node])
+        # print(sel_edge_node_avail_bandwidth)
         for client in kehu:
             cur_client_demand = D[client][t]
-            if Q[sel_edge_node][client] >= qos_constraint:
-                continue
-            if sel_edge_node_avail_bandwidth < cur_client_demand:
-                D[client][t] -= sel_edge_node_avail_bandwidth
-                sel_edge_node_avail_bandwidth = 0
-                X[client][sel_edge_node] += sel_edge_node_avail_bandwidth
-                W[sel_edge_node][t] += sel_edge_node_avail_bandwidth
-                break
-            else:
-                D[client][t] -= cur_client_demand
-                sel_edge_node_avail_bandwidth -= cur_client_demand
-                X[client][sel_edge_node] += cur_client_demand
-                W[sel_edge_node][t] += cur_client_demand
+            if Q[sel_edge_node][client] < qos_constraint:
+                if sel_edge_node_avail_bandwidth < cur_client_demand:
+                    D[client][t] -= sel_edge_node_avail_bandwidth
+                    X[client][sel_edge_node] += sel_edge_node_avail_bandwidth
+                    W[sel_edge_node][t] += sel_edge_node_avail_bandwidth
+                    sel_edge_node_avail_bandwidth = 0
+                    break
+                else:
+                    D[client][t] -= cur_client_demand
+                    sel_edge_node_avail_bandwidth -= cur_client_demand
+                    X[client][sel_edge_node] += cur_client_demand
+                    W[sel_edge_node][t] += cur_client_demand
+            # if D[client][t] != 0:
+            #         print(D[client][t])
 
 
-        
+
         # Allocate remain demanding
         for i in range(kehu_number):
             print('{}:'.format(kehu[i]), file=solution, end='')
@@ -186,6 +188,7 @@ if __name__ == '__main__':
                     # 分配总带宽达到节点上限
                     else:
                         continue
+            # print(D[-1])
             for j in range(jiedian_number):
                 # if jiedian[j] == sel_edge_node:
                 #     continue
@@ -218,7 +221,7 @@ if __name__ == '__main__':
             print(','.join(resu), file=solution)
             if D[kehu[i]][t] != 0:
                 print(D[kehu[i]][t])
-
+    # print(D)
             # print(res)
     # s = 0
     # for j in range(jiedian_number):
