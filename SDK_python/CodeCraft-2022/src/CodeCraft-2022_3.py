@@ -9,7 +9,7 @@ import numpy as np
 import configparser
 from collections import defaultdict
 
-
+import math
 
 class Tools:
 
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # print(qos_constraint)
 
     # Calculate the maximum fully loaded numbers
-    maximum_fully_loaded_num = int(T * 0.05) -1
+    maximum_fully_loaded_num = T - math.ceil(T * 0.95) - 1
 
     # Record the current fully loaded numbers of each edge node
     fully_loaded_numbers = defaultdict(int)
@@ -103,53 +103,45 @@ if __name__ == '__main__':
     for j in range(jiedian_number):
         for t in range(T):
             W[jiedian[j]].append(0)
-
-    nodes_num = int(2)
+    
     for t in range(T):
 
         # Record the allocation detail at the current timestamp
         # X[客户节点][边缘节点]为分配带宽，先初始化为0
         X = defaultdict(int)
-        for i in range(len(data2) - 1):
-            for j in range(len(data2[0]) - 1):
+        for i in range(len(data2)-1):
+            for j in range(len(data2[0])-1):
                 Tools.addtwodimdict(X, data2[0][j + 1], data2[i + 1][0], 0)
-
+        
         # Get the available edge nodes and its band width
         cur_available_edge_nodes = []
-        for edge_node in jiedian:
+        for edge_node in jiedian: 
             if fully_loaded_numbers[edge_node] < maximum_fully_loaded_num:
                 cur_available_edge_nodes.append(edge_node)
         if len(cur_available_edge_nodes) == 0:
             print('No available edge nodes.')
-
+        
         # Select the max cover edge
-        if len(cur_available_edge_nodes) > nodes_num:
-            sel_edge_nodes = cur_available_edge_nodes[:nodes_num]
-        else:
-            sel_edge_nodes = cur_available_edge_nodes
-        for sel_edge_node in sel_edge_nodes:
+        sel_edge_node = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer)
+        fully_loaded_numbers[sel_edge_node] += 1
 
-            fully_loaded_numbers[sel_edge_node] += 1
-
-            # Start allocation
-            sel_edge_node_avail_bandwidth = int(C[sel_edge_node])
-            # print(sel_edge_node_avail_bandwidth)
-            for client in kehu:
-                cur_client_demand = D[client][t]
-                if Q[sel_edge_node][client] < qos_constraint:
-                    if sel_edge_node_avail_bandwidth < cur_client_demand:
-                        D[client][t] -= sel_edge_node_avail_bandwidth
-                        X[client][sel_edge_node] += sel_edge_node_avail_bandwidth
-                        W[sel_edge_node][t] += sel_edge_node_avail_bandwidth
-                        sel_edge_node_avail_bandwidth = 0
-                        break
-                    else:
-                        D[client][t] -= cur_client_demand
-                        sel_edge_node_avail_bandwidth -= cur_client_demand
-                        X[client][sel_edge_node] += cur_client_demand
-                        W[sel_edge_node][t] += cur_client_demand
-            # if D[client][t] != 0:
-            #         print(D[client][t])
+        # Start allocation
+        sel_edge_node_avail_bandwidth = C[sel_edge_node]
+        for client in kehu:
+            cur_client_demand = D[client][t]
+            if Q[sel_edge_node][client] >= qos_constraint:
+                continue
+            if sel_edge_node_avail_bandwidth < cur_client_demand:
+                D[client][t] -= sel_edge_node_avail_bandwidth
+                X[client][sel_edge_node] += sel_edge_node_avail_bandwidth
+                W[sel_edge_node][t] += sel_edge_node_avail_bandwidth
+                sel_edge_node_avail_bandwidth = 0
+                break
+            else:
+                D[client][t] -= cur_client_demand
+                sel_edge_node_avail_bandwidth -= cur_client_demand
+                X[client][sel_edge_node] += cur_client_demand
+                W[sel_edge_node][t] += cur_client_demand
 
 
         

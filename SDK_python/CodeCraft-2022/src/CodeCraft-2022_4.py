@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # print(qos_constraint)
 
     # Calculate the maximum fully loaded numbers
-    maximum_fully_loaded_num = int(T * 0.05) -1
+    maximum_fully_loaded_num = int(T * 0.05) - 1
 
     # Record the current fully loaded numbers of each edge node
     fully_loaded_numbers = defaultdict(int)
@@ -103,8 +103,12 @@ if __name__ == '__main__':
     for j in range(jiedian_number):
         for t in range(T):
             W[jiedian[j]].append(0)
-
-    nodes_num = int(2)
+    count = defaultdict(int)
+    for i in range(kehu_number):
+        for j in range(jiedian_number):
+            if Q[jiedian[j]][kehu[i]] < qos_constraint:
+                count[kehu[i]] += 1
+    nodes_num = int(0.05*jiedian_number-1)
     for t in range(T):
 
         # Record the allocation detail at the current timestamp
@@ -128,7 +132,6 @@ if __name__ == '__main__':
         else:
             sel_edge_nodes = cur_available_edge_nodes
         for sel_edge_node in sel_edge_nodes:
-
             fully_loaded_numbers[sel_edge_node] += 1
 
             # Start allocation
@@ -156,8 +159,40 @@ if __name__ == '__main__':
         # Allocate remain demanding
         for i in range(kehu_number):
             print('{}:'.format(kehu[i]), file=solution, end='')
-            res = []
+            resu = []
             # 剩余全部分配
+            for j in range(jiedian_number):
+                # if jiedian[j] == sel_edge_node:
+                #     continue
+                orginal = D[kehu[i]][t]
+                # 客户带宽分配完毕
+                # 满足约束条件
+                # if D[client][t] == 0:
+                #     continue
+                if Q[jiedian[j]][kehu[i]] < qos_constraint:
+                    # 分配总带宽不超过节点带宽上限
+                    cur_bandwidth_maximum = C[jiedian[j]]
+                    # if jiedian[j] == sel_edge_node:
+                    #     cur_bandwidth_maximum = sel_edge_node_avail_bandwidth
+                    if W[jiedian[j]][t] <= cur_bandwidth_maximum:
+                        # 节点还能承受的带宽
+                        rest = cur_bandwidth_maximum - W[jiedian[j]][t]
+                        if int(orginal / count[kehu[i]]) <= D[kehu[i]][t]:
+                            if rest >= int(orginal / count[kehu[i]]):
+                                # 分配带宽
+                                X[kehu[i]][jiedian[j]] += int(orginal / count[kehu[i]])
+                                # 客户带宽分配完
+                                W[jiedian[j]][t] += int(orginal / count[kehu[i]])
+                                D[kehu[i]][t] -= int(orginal / count[kehu[i]])
+                            else:
+                                X[kehu[i]][jiedian[j]] += rest
+                                W[jiedian[j]][t] += rest
+                                D[kehu[i]][t] -= rest
+
+                    # 分配总带宽达到节点上限
+                    else:
+                        continue
+            # print(D[-1])
             for j in range(jiedian_number):
                 # if jiedian[j] == sel_edge_node:
                 #     continue
@@ -182,14 +217,14 @@ if __name__ == '__main__':
                             X[kehu[i]][jiedian[j]] += rest
                             W[jiedian[j]][t] += rest
                             D[kehu[i]][t] -= rest
-
-                    # 分配总带宽达到节点上限
                     else:
                         continue
+
                 if X[kehu[i]][jiedian[j]] != 0:
-                    res.append('<{},{}>'.format(jiedian[j], X[kehu[i]][jiedian[j]]))   
-            print(','.join(res), file=solution)
-            # print(res)
+                    resu.append('<{},{}>'.format(jiedian[j], X[kehu[i]][jiedian[j]]))
+            print(','.join(resu), file=solution)
+            if D[kehu[i]][t] != 0:
+                print(D[kehu[i]][t])
     s = 0
     for j in range(jiedian_number):
         #总带宽排序
