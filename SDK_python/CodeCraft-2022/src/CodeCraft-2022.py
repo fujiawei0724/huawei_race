@@ -2,13 +2,13 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-19 17:32:09
+LastEditTime: 2022-03-19 17:38:37
 Description:
 '''
 import numpy as np
 import configparser
-import copy
-import time
+# import copy
+# import time
 from collections import defaultdict
 
 
@@ -36,7 +36,7 @@ class Tools:
 
 
 if __name__ == '__main__':
-    start_time = time.time()
+    # start_time = time.time()
     config = configparser.ConfigParser()  # 类实例化
     # 定义参数文件路径
     path = './data/config.ini'
@@ -258,8 +258,8 @@ if __name__ == '__main__':
         W[jiedian[j]].sort()
         s += W[jiedian[j]][int(T * 0.95)]
     print(s)
-    end_time = time.time()
-    print('Time consumption: {}'.format(end_time - start_time))
+    # end_time = time.time()
+    # print('Time consumption: {}'.format(end_time - start_time))
     # print(W)
     # print(D)
     # print(X)
