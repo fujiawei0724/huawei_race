@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-19 14:08:08
+LastEditTime: 2022-03-19 19:02:13
 Description:
 '''
 import numpy as np
@@ -141,11 +141,9 @@ if __name__ == '__main__':
         # print(sel_edge_nodes)
 
         for sel_edge_node in sel_edge_nodes:
+
+            # Calculate parameter
             dam = max_kehu_demand[t]/C[sel_edge_node]
-            # Backup infomration
-            D_backup = copy.deepcopy(D)
-            X_backup = copy.deepcopy(X)
-            W_backup = copy.deepcopy(W)
 
             # Start allocation
             sel_edge_node_avail_bandwidth = C[sel_edge_node]
@@ -170,9 +168,11 @@ if __name__ == '__main__':
                 fully_loaded_numbers[sel_edge_node] += 1
             else:
                 # Not fully loaded, restore allocation information
-                D = D_backup
-                X = X_backup
-                W = W_backup
+                for client in kehu:
+                    restore_value = X[sel_edge_node][client]
+                    D[client][t] += restore_value
+                    W[sel_edge_node][t] -= restore_value
+                    X[sel_edge_node][client] -= restore_value
                 break
 
         # Allocate remain demanding
