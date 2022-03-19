@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-19 17:38:37
+LastEditTime: 2022-03-19 18:00:16
 Description:
 '''
 import numpy as np
@@ -160,7 +160,7 @@ if __name__ == '__main__':
                     all_req += cur_client_demand
             
             # Check the integrated requirement
-            if all_req < sel_edge_node_avail_bandwidth_thres:
+            if all_req < sel_edge_node_avail_bandwidth:
                 # Not fully loaded, stop allocation
                 break
 
@@ -172,14 +172,13 @@ if __name__ == '__main__':
                         X[client][sel_edge_node] += sel_edge_node_avail_bandwidth
                         W[sel_edge_node][t] += sel_edge_node_avail_bandwidth
                         sel_edge_node_avail_bandwidth = 0
-                        break
                     else:
                         D[client][t] -= cur_client_demand
                         sel_edge_node_avail_bandwidth -= cur_client_demand
                         X[client][sel_edge_node] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
 
-            if W[sel_edge_node][t] > dam * C[sel_edge_node]:
+            if W[sel_edge_node][t] > sel_edge_node_avail_bandwidth_thres:
                 # Fully loaded
                 fully_loaded_numbers[sel_edge_node] += 1
 
