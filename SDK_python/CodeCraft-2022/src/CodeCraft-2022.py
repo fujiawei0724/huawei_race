@@ -51,10 +51,16 @@ if __name__ == '__main__':
         kehu_number = len(kehu)
         T = len(data[1:])
         D = defaultdict(list)
+        a = 0
+        max_kehu_demand = []
         # 客户宽带需求
         for i in range(T):
             for j in range(kehu_number):
                 D[kehu[j]].append(int(data[i + 1][j + 1]))
+                a = a +int(data[i + 1][j + 1])
+            a =  a/kehu_number
+            max_kehu_demand.append(a)
+
     with open('./data/site_bandwidth.csv', 'rb') as s:
         data1 = np.loadtxt(s, str, delimiter=",")
         jiedian_number = len(data1[1:])
@@ -116,6 +122,7 @@ if __name__ == '__main__':
 
         # Record the allocation detail at the current timestamp
         # X[客户节点][边缘节点]为分配带宽，先初始化为0
+
         X = defaultdict(int)
         for i in range(len(data2) - 1):
             for j in range(len(data2[0]) - 1):
@@ -134,7 +141,7 @@ if __name__ == '__main__':
         # print(sel_edge_nodes)
 
         for sel_edge_node in sel_edge_nodes:
-
+            dam = max_kehu_demand[t]/C[sel_edge_node]
             # Backup infomration
             D_backup = copy.deepcopy(D)
             X_backup = copy.deepcopy(X)
@@ -158,7 +165,7 @@ if __name__ == '__main__':
                         X[client][sel_edge_node] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
 
-            if W[sel_edge_node][t] == C[sel_edge_node]:
+            if W[sel_edge_node][t] > dam*C[sel_edge_node]:
                 # Fully loaded
                 fully_loaded_numbers[sel_edge_node] += 1
             else:
