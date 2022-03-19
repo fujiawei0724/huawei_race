@@ -2,15 +2,14 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-19 18:00:16
+LastEditTime: 2022-03-19 14:08:08
 Description:
 '''
 import numpy as np
 import configparser
-# import copy
-# import time
+import copy
 from collections import defaultdict
-
+import math
 
 class Tools:
 
@@ -36,7 +35,6 @@ class Tools:
 
 
 if __name__ == '__main__':
-    # start_time = time.time()
     config = configparser.ConfigParser()  # 类实例化
     # 定义参数文件路径
     path = './data/config.ini'
@@ -89,7 +87,7 @@ if __name__ == '__main__':
     # print(qos_constraint)
 
     # Calculate the maximum fully loaded numbers
-    maximum_fully_loaded_num = int(T * 0.05) - 1
+    maximum_fully_loaded_num = int(T * 0.05)-1
 
     # Record the current fully loaded numbers of each edge node
     fully_loaded_numbers = defaultdict(int)
@@ -123,12 +121,12 @@ if __name__ == '__main__':
     for t in range(T):
 
         # Record the allocation detail at the current timestamp
-        # X[客户节点][边缘节点]为分配带宽，先初始化为0
+        # X[边缘节点]为分配带宽，先初始化为0
 
         X = defaultdict(int)
-        for i in range(len(data2) - 1):
-            for j in range(len(data2[0]) - 1):
-                Tools.addtwodimdict(X, data2[0][j + 1], data2[i + 1][0], 0)
+        for i in range(jiedian_number):
+            for j in range(kehu_number):
+                Tools.addtwodimdict(X, jiedian[i], kehu[j], 0)
 
         # Get the available edge nodes and its band width
         cur_available_edge_nodes = []
@@ -143,45 +141,39 @@ if __name__ == '__main__':
         # print(sel_edge_nodes)
 
         for sel_edge_node in sel_edge_nodes:
-
-            # Calculate parameter
             dam = max_kehu_demand[t]/C[sel_edge_node]
+            # Backup infomration
+            D_backup = copy.deepcopy(D)
+            X_backup = copy.deepcopy(X)
+            W_backup = copy.deepcopy(W)
 
-            # Get the bandwidth of the selected edge node
+            # Start allocation
             sel_edge_node_avail_bandwidth = C[sel_edge_node]
-            sel_edge_node_avail_bandwidth_thres = C[sel_edge_node] * dam
             # print(sel_edge_node_avail_bandwidth)
-
-            # Accumulate all the requirements
-            all_req = 0
-            for client in kehu:
-                cur_client_demand = D[client][t]
-                if Q[sel_edge_node][client] < qos_constraint:
-                    all_req += cur_client_demand
-            
-            # Check the integrated requirement
-            if all_req < sel_edge_node_avail_bandwidth:
-                # Not fully loaded, stop allocation
-                break
-
             for client in kehu:
                 cur_client_demand = D[client][t]
                 if Q[sel_edge_node][client] < qos_constraint:
                     if sel_edge_node_avail_bandwidth < cur_client_demand:
                         D[client][t] -= sel_edge_node_avail_bandwidth
-                        X[client][sel_edge_node] += sel_edge_node_avail_bandwidth
+                        X[sel_edge_node][client] += sel_edge_node_avail_bandwidth
                         W[sel_edge_node][t] += sel_edge_node_avail_bandwidth
                         sel_edge_node_avail_bandwidth = 0
+                        break
                     else:
                         D[client][t] -= cur_client_demand
                         sel_edge_node_avail_bandwidth -= cur_client_demand
-                        X[client][sel_edge_node] += cur_client_demand
+                        X[sel_edge_node][client] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
 
-            if W[sel_edge_node][t] > sel_edge_node_avail_bandwidth_thres:
+            if W[sel_edge_node][t] > dam*C[sel_edge_node]:
                 # Fully loaded
                 fully_loaded_numbers[sel_edge_node] += 1
-
+            else:
+                # Not fully loaded, restore allocation information
+                D = D_backup
+                X = X_backup
+                W = W_backup
+                break
 
         # Allocate remain demanding
         for i in range(kehu_number):
@@ -207,12 +199,12 @@ if __name__ == '__main__':
                         if int(orginal / count[kehu[i]]) <= D[kehu[i]][t]:
                             if rest >= int(orginal / count[kehu[i]]):
                                 # 分配带宽
-                                X[kehu[i]][jiedian[j]] += int(orginal / count[kehu[i]])
+                                X[jiedian[j]][kehu[i]] += int(orginal / count[kehu[i]])
                                 # 客户带宽分配完
                                 W[jiedian[j]][t] += int(orginal / count[kehu[i]])
                                 D[kehu[i]][t] -= int(orginal / count[kehu[i]])
                             else:
-                                X[kehu[i]][jiedian[j]] += rest
+                                X[jiedian[j]][kehu[i]] += rest
                                 W[jiedian[j]][t] += rest
                                 D[kehu[i]][t] -= rest
 
@@ -236,19 +228,19 @@ if __name__ == '__main__':
                         rest = cur_bandwidth_maximum - W[jiedian[j]][t]
                         if rest >= D[kehu[i]][t]:
                             # 分配带宽
-                            X[kehu[i]][jiedian[j]] += D[kehu[i]][t]
+                            X[jiedian[j]][kehu[i]] += D[kehu[i]][t]
                             # 客户带宽分配完
                             W[jiedian[j]][t] += D[kehu[i]][t]
                             D[kehu[i]][t] = 0
                         else:
-                            X[kehu[i]][jiedian[j]] += rest
+                            X[jiedian[j]][kehu[i]] += rest
                             W[jiedian[j]][t] += rest
                             D[kehu[i]][t] -= rest
                     else:
                         continue
 
-                if X[kehu[i]][jiedian[j]] != 0:
-                    resu.append('<{},{}>'.format(jiedian[j], X[kehu[i]][jiedian[j]]))
+                if X[jiedian[j]][kehu[i]] != 0:
+                    resu.append('<{},{}>'.format(jiedian[j], X[jiedian[j]][kehu[i]]))
             print(','.join(resu), file=solution)
             # print(res)
     s = 0
@@ -257,8 +249,6 @@ if __name__ == '__main__':
         W[jiedian[j]].sort()
         s += W[jiedian[j]][int(T * 0.95)]
     print(s)
-    # end_time = time.time()
-    # print('Time consumption: {}'.format(end_time - start_time))
     # print(W)
     # print(D)
     # print(X)
