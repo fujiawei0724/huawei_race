@@ -2,12 +2,13 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-19 14:08:08
+LastEditTime: 2022-03-19 17:32:09
 Description:
 '''
 import numpy as np
 import configparser
 import copy
+import time
 from collections import defaultdict
 
 
@@ -35,6 +36,7 @@ class Tools:
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     config = configparser.ConfigParser()  # 类实例化
     # 定义参数文件路径
     path = './data/config.ini'
@@ -141,15 +143,27 @@ if __name__ == '__main__':
         # print(sel_edge_nodes)
 
         for sel_edge_node in sel_edge_nodes:
-            dam = max_kehu_demand[t]/C[sel_edge_node]
-            # Backup infomration
-            D_backup = copy.deepcopy(D)
-            X_backup = copy.deepcopy(X)
-            W_backup = copy.deepcopy(W)
 
-            # Start allocation
+            # Calculate parameter
+            dam = max_kehu_demand[t]/C[sel_edge_node]
+
+            # Get the bandwidth of the selected edge node
             sel_edge_node_avail_bandwidth = C[sel_edge_node]
+            sel_edge_node_avail_bandwidth_thres = C[sel_edge_node] * dam
             # print(sel_edge_node_avail_bandwidth)
+
+            # Accumulate all the requirements
+            all_req = 0
+            for client in kehu:
+                cur_client_demand = D[client][t]
+                if Q[sel_edge_node][client] < qos_constraint:
+                    all_req += cur_client_demand
+            
+            # Check the integrated requirement
+            if all_req < sel_edge_node_avail_bandwidth_thres:
+                # Not fully loaded, stop allocation
+                break
+
             for client in kehu:
                 cur_client_demand = D[client][t]
                 if Q[sel_edge_node][client] < qos_constraint:
@@ -165,15 +179,10 @@ if __name__ == '__main__':
                         X[client][sel_edge_node] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
 
-            if W[sel_edge_node][t] > dam*C[sel_edge_node]:
+            if W[sel_edge_node][t] > dam * C[sel_edge_node]:
                 # Fully loaded
                 fully_loaded_numbers[sel_edge_node] += 1
-            else:
-                # Not fully loaded, restore allocation information
-                D = D_backup
-                X = X_backup
-                W = W_backup
-                break
+
 
         # Allocate remain demanding
         for i in range(kehu_number):
@@ -249,6 +258,8 @@ if __name__ == '__main__':
         W[jiedian[j]].sort()
         s += W[jiedian[j]][int(T * 0.95)]
     print(s)
+    end_time = time.time()
+    print('Time consumption: {}'.format(end_time - start_time))
     # print(W)
     # print(D)
     # print(X)
