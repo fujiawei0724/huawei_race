@@ -2,11 +2,12 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-18 13:49:19
+LastEditTime: 2022-03-19 14:08:08
 Description: 
 '''
 import numpy as np
 import configparser
+import copy
 from collections import defaultdict
 
 
@@ -15,14 +16,17 @@ class Tools:
 
     @staticmethod
     def select_edge_nodes(available_edge_nodes, connected_number):
-        max_cover_num = 0
-        res = ' '
+
+        # Provide the connected information
+        available_edge_nodes_info = dict()
         for edge_node in available_edge_nodes:
-            if connected_number[edge_node] > max_cover_num:
-                res = edge_node
-                max_cover_num = connected_number[edge_node]
-        assert res != ' '
-        return res
+            available_edge_nodes_info[edge_node] = connected_number[edge_node]
+        
+        # Sort
+        available_edge_nodes_info = sorted(available_edge_nodes_info.items(), key=lambda x:x[1], reverse=True)
+
+        return list(dict(available_edge_nodes_info).keys())
+
 
     @staticmethod
     def addtwodimdict(thedict, key_a, key_b, val):
@@ -34,14 +38,14 @@ class Tools:
 if __name__ == '__main__':
     config = configparser.ConfigParser() # 类实例化
     # 定义参数文件路径
-    path = '/data/config.ini'
+    path = './data/config.ini'
     config.read(path)
     # 导入参数配置
     qos_constraint = int(config.get('config','qos_constraint'))
     # print(qos_constraint)
     # qos_constraint = 400
     #客户
-    with open('/data/demand.csv','rb') as f:
+    with open('./data/demand.csv','rb') as f:
         data = np.loadtxt(f, str, delimiter=",")
         #客户名称
         kehu = data[0][1:]
@@ -52,7 +56,7 @@ if __name__ == '__main__':
         for i in range(T):
             for j in range(kehu_number):
                 D[kehu[j]].append(int(data[i+1][j+1]))
-    with open('/data/site_bandwidth.csv','rb') as s:
+    with open('./data/site_bandwidth.csv','rb') as s:
         data1 = np.loadtxt(s,str,delimiter=",")
         jiedian_number = len(data1[1:])
         #边缘节点名称
@@ -62,7 +66,7 @@ if __name__ == '__main__':
         for i in range(jiedian_number):
             jiedian.append(data1[i+1][0])
             C[data1[i+1][0]] = int(data1[i+1][1])
-    with open('/data/qos.csv','rb') as q:
+    with open('./data/qos.csv','rb') as q:
         data2 = np.loadtxt(q,str,delimiter=',')
         # Q[边缘节点][客户节点]=qos
         Q = defaultdict(int)
@@ -97,7 +101,7 @@ if __name__ == '__main__':
 
     # allocation_record = dict()
 
-    solution = open('/output/solution.txt','w')
+    solution = open('./output/solution.txt','w')
 
     W = defaultdict(list)
     for j in range(jiedian_number):
@@ -108,7 +112,7 @@ if __name__ == '__main__':
         for j in range(jiedian_number):
             if Q[jiedian[j]][kehu[i]] < qos_constraint:
                 count[kehu[i]] += 1
-    nodes_num = int(2)
+    
     for t in range(T):
 
         # Record the allocation detail at the current timestamp
@@ -126,17 +130,18 @@ if __name__ == '__main__':
         if len(cur_available_edge_nodes) == 0:
             print('No available edge nodes.')
 
-        # Select the max cover edge
-        if len(cur_available_edge_nodes) > nodes_num:
-            sel_edge_nodes = cur_available_edge_nodes[:nodes_num]
-        else:
-            sel_edge_nodes = cur_available_edge_nodes
+        # Sort the available edge nodes
+        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer)
+            
         for sel_edge_node in sel_edge_nodes:
 
-            fully_loaded_numbers[sel_edge_node] += 1
+            # Backup infomration
+            D_backup = copy.deepcopy(D)
+            X_backup = copy.deepcopy(X)
+            W_backup = copy.deepcopy(W)
 
             # Start allocation
-            sel_edge_node_avail_bandwidth = int(C[sel_edge_node])
+            sel_edge_node_avail_bandwidth = C[sel_edge_node]
             # print(sel_edge_node_avail_bandwidth)
             for client in kehu:
                 cur_client_demand = D[client][t]
@@ -152,8 +157,17 @@ if __name__ == '__main__':
                         sel_edge_node_avail_bandwidth -= cur_client_demand
                         X[client][sel_edge_node] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
-            # if D[client][t] != 0:
-            #         print(D[client][t])
+            
+            if W[sel_edge_node][t] == C[sel_edge_node]:
+                # Fully loaded
+                fully_loaded_numbers[sel_edge_node] += 1
+            else:
+                # Not fully loaded, restore allocation information 
+                D = D_backup
+                X = X_backup
+                W = W_backup
+                break
+
 
 
         
