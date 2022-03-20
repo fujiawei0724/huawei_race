@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-19 19:02:13
+LastEditTime: 2022-03-20 12:07:54
 Description:
 '''
 import numpy as np
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # print(qos_constraint)
 
     # Calculate the maximum fully loaded numbers
-    maximum_fully_loaded_num = int(T * 0.05)-1
+    maximum_fully_loaded_num = int(T * 0.04)
 
     # Record the current fully loaded numbers of each edge node
     fully_loaded_numbers = defaultdict(int)
@@ -144,10 +144,12 @@ if __name__ == '__main__':
 
             # Calculate parameter
             dam = max_kehu_demand[t]/C[sel_edge_node]
+            # dam = 1
 
             # Start allocation
             sel_edge_node_avail_bandwidth = C[sel_edge_node]
             # print(sel_edge_node_avail_bandwidth)
+            kehu = sorted(kehu, key=lambda x:D[x][t], reverse=True)
             for client in kehu:
                 cur_client_demand = D[client][t]
                 if Q[sel_edge_node][client] < qos_constraint:
