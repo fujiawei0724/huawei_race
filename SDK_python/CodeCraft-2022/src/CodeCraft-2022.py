@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-20 18:19:59
+LastEditTime: 2022-03-20 18:57:42
 Description:
 '''
 import numpy as np
@@ -236,10 +236,10 @@ if __name__ == '__main__':
             print('{}:'.format(kehu[i]), file=solution, end='')
             resu = []
             # 剩余全部分配
+            orginal = D[kehu[i]][t]
             for j in range(jiedian_number):
                 # if jiedian[j] == sel_edge_node:
                 #     continue
-                orginal = D[kehu[i]][t]
                 # 客户带宽分配完毕
                 # 满足约束条件
                 # if D[client][t] == 0:
