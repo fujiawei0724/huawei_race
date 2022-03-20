@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-19 22:46:06
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-19 23:05:07
+LastEditTime: 2022-03-20 09:31:00
 Description: Test the main algorithm, it holds the same structure with the core algorithm, the difference is the output could recorded autonomously.
 '''
 
@@ -13,6 +13,7 @@ from collections import defaultdict
 import math
 import sys
 import os
+import csv
 
 class Tools:
 
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     # print(qos_constraint)
 
     # Calculate the maximum fully loaded numbers
-    maximum_fully_loaded_num = int(T * 0.05)-1
+    maximum_fully_loaded_num = int(T * 0.05)
 
     # Record the current fully loaded numbers of each edge node
     fully_loaded_numbers = defaultdict(int)
@@ -256,7 +257,8 @@ if __name__ == '__main__':
         # 总带宽排序
         W[jiedian[j]].sort()
         s += W[jiedian[j]][int(T * 0.95)]
-    print(s)
-    # print(W)
-    # print(D)
-    # print(X)
+    print('Group {} result: {}'.format(group_index, s))
+
+    with open(solution_dir_path + 'final_result.csv', 'a+') as f:
+        csv_writer = csv.writer(f)
+        csv_writer.writerow([group_index, s])

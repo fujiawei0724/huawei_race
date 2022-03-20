@@ -2,7 +2,7 @@
  # @Author: fujiawei0724
  # @Date: 2022-03-19 22:44:40
  # @LastEditors: fujiawei0724
- # @LastEditTime: 2022-03-19 23:07:06
+ # @LastEditTime: 2022-03-20 09:27:15
  # @Description: Process the results from different data to generate the final result
 ### 
 
@@ -12,6 +12,8 @@ do
     let index=$i-$comp
     python ./CodeCraft-2022/src/tester.py $index
 done
+
+python results_generator.py
 
 
 
