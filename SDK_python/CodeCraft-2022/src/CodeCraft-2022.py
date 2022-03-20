@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-20 14:54:00
+LastEditTime: 2022-03-20 15:15:55
 Description:
 '''
 import numpy as np
@@ -183,15 +183,16 @@ if __name__ == '__main__':
         for i in range(kehu_number):
 
             # Calculate the client's connected edge nodes that have not been fully loaded at the current timestamp
-            valid_ave_connected_edge_noded_num = 0
+            valid_ave_connected_edge_nodes_num = 0
             cur_connected_edge_node = count_info[kehu_number]
             for con_edge_node in cur_connected_edge_node:
                 if fully_loaded_numbers[con_edge_node] < maximum_fully_loaded_num:
-                    valid_ave_connected_edge_noded_num += 1
+                    valid_ave_connected_edge_nodes_num += 1
             
-            if valid_ave_connected_edge_noded_num == 0:
+            # Mandatory average allocation flag
+            if valid_ave_connected_edge_nodes_num == 0:
                 print('Timestamp: {}, client: {} has no valid average allocation edge nodes.'.format(t, kehu[i]))
-                valid_ave_connected_edge_noded_num = count[client]
+                valid_ave_connected_edge_nodes_num = count[client]
 
             print('{}:'.format(kehu[i]), file=solution, end='')
             resu = []
@@ -212,13 +213,13 @@ if __name__ == '__main__':
                     if W[jiedian[j]][t] <= cur_bandwidth_maximum:
                         # 节点还能承受的带宽
                         rest = cur_bandwidth_maximum - W[jiedian[j]][t]
-                        if int(orginal / valid_ave_connected_edge_noded_num) <= D[kehu[i]][t]:
-                            if rest >= int(orginal / valid_ave_connected_edge_noded_num):
+                        if int(orginal / valid_ave_connected_edge_nodes_num) <= D[kehu[i]][t]:
+                            if rest >= int(orginal / valid_ave_connected_edge_nodes_num):
                                 # 分配带宽
-                                X[jiedian[j]][kehu[i]] += int(orginal / valid_ave_connected_edge_noded_num)
+                                X[jiedian[j]][kehu[i]] += int(orginal / valid_ave_connected_edge_nodes_num)
                                 # 客户带宽分配完
-                                W[jiedian[j]][t] += int(orginal / valid_ave_connected_edge_noded_num)
-                                D[kehu[i]][t] -= int(orginal / valid_ave_connected_edge_noded_num)
+                                W[jiedian[j]][t] += int(orginal / valid_ave_connected_edge_nodes_num)
+                                D[kehu[i]][t] -= int(orginal / valid_ave_connected_edge_nodes_num)
                             else:
                                 X[jiedian[j]][kehu[i]] += rest
                                 W[jiedian[j]][t] += rest
