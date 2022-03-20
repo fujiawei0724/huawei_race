@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-20 16:56:09
+LastEditTime: 2022-03-20 18:19:59
 Description:
 '''
 import numpy as np
@@ -14,17 +14,49 @@ import math
 class Tools:
 
     @staticmethod
-    def select_edge_nodes(available_edge_nodes, connected_number):
+    def select_edge_nodes(available_edge_nodes, connected_number, count_info, connected_info):
 
-        # Provide the connected information
-        available_edge_nodes_info = dict()
-        for edge_node in available_edge_nodes:
-            available_edge_nodes_info[edge_node] = connected_number[edge_node]
+        def check(covered_info, checked_edge_node):
+            if len(connected_info[checked_edge_node]) == 0:
+                return False
+            for con_client in connected_info[checked_edge_node]:
+                if covered_info[con_client]:
+                    return False
+            return True
 
-        # Sort
-        available_edge_nodes_info = sorted(available_edge_nodes_info.items(), key=lambda x: x[1], reverse=True)
+        # Initialize results
+        selected_edge_nodes = []
 
-        return list(dict(available_edge_nodes_info).keys())
+        # Record the cover information of all clients
+        covered_info = dict()
+        for client in count_info.keys():
+            covered_info[client] = False
+                
+        # Sort the edge nodes with the number of the connected clients
+        available_edge_nodes = sorted(available_edge_nodes, key=lambda x:connected_number[x], reverse=True)
+
+        # Traverse 
+        for candid_avail_edge_node in available_edge_nodes:
+            # if False not in covered_info.values():
+            #     break
+            if not check(covered_info, candid_avail_edge_node):
+                continue
+
+            selected_edge_nodes.append(candid_avail_edge_node)
+
+            for con_client in connected_info[candid_avail_edge_node]:
+                covered_info[con_client] = True
+            
+        
+        # DEBUG
+        # for client, covered in covered_info.items():
+        #     if not covered:
+                # print('DEBUG: available edge nodes could cover: {}'.format(client))
+        # END DEBUG
+
+        # print('Selected edge nodes number: {}'.format(len(selected_edge_nodes)))
+
+        return selected_edge_nodes
 
     @staticmethod
     def addtwodimdict(thedict, key_a, key_b, val):
@@ -96,12 +128,14 @@ if __name__ == '__main__':
 
     # Record the connected clients number of a edge node and the available edge nodes for each client
     connected_numer = defaultdict(int)
+    connected_info = defaultdict(list)
     count = defaultdict(int)
     count_info = defaultdict(list)
     for edge_node in jiedian:
         for client in kehu:
             if Q[edge_node][client] < qos_constraint:
                 connected_numer[edge_node] += 1
+                connected_info[edge_node].append(client)
                 count[client] += 1
                 count_info[client].append(edge_node)
     # print(available_edge_nodes)
@@ -139,7 +173,7 @@ if __name__ == '__main__':
         #     print('No available edge nodes.')
 
         # Sort the available edge nodes
-        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer)
+        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer, count_info, connected_info)
         # print(sel_edge_nodes)
 
         # Record the fully loaded edge nodes
