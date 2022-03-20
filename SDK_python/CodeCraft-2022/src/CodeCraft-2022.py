@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-20 15:15:55
+LastEditTime: 2022-03-20 16:56:09
 Description:
 '''
 import numpy as np
@@ -142,6 +142,9 @@ if __name__ == '__main__':
         sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer)
         # print(sel_edge_nodes)
 
+        # Record the fully loaded edge nodes
+        cur_fully_loaded_edge_nodes = []
+
         for sel_edge_node in sel_edge_nodes:
 
             # Calculate parameter
@@ -170,6 +173,7 @@ if __name__ == '__main__':
             if W[sel_edge_node][t] > dam*C[sel_edge_node]:
                 # Fully loaded
                 fully_loaded_numbers[sel_edge_node] += 1
+                cur_fully_loaded_edge_nodes.append(sel_edge_node)
             else:
                 # Not fully loaded, restore allocation information
                 for client in kehu:
@@ -178,21 +182,22 @@ if __name__ == '__main__':
                     W[sel_edge_node][t] -= restore_value
                     X[sel_edge_node][client] -= restore_value
                 break
+        
 
         # Allocate remain demanding
         for i in range(kehu_number):
 
             # Calculate the client's connected edge nodes that have not been fully loaded at the current timestamp
             valid_ave_connected_edge_nodes_num = 0
-            cur_connected_edge_node = count_info[kehu_number]
+            cur_connected_edge_node = count_info[kehu[i]]
             for con_edge_node in cur_connected_edge_node:
-                if fully_loaded_numbers[con_edge_node] < maximum_fully_loaded_num:
+                if con_edge_node not in cur_fully_loaded_edge_nodes:
                     valid_ave_connected_edge_nodes_num += 1
             
             # Mandatory average allocation flag
             if valid_ave_connected_edge_nodes_num == 0:
-                print('Timestamp: {}, client: {} has no valid average allocation edge nodes.'.format(t, kehu[i]))
-                valid_ave_connected_edge_nodes_num = count[client]
+                # print('Timestamp: {}, client: {} has no valid average allocation edge nodes.'.format(t, kehu[i]))
+                valid_ave_connected_edge_nodes_num = count[kehu[i]]
 
             print('{}:'.format(kehu[i]), file=solution, end='')
             resu = []
