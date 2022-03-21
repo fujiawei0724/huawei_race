@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-21 10:25:56
+LastEditTime: 2022-03-21 12:22:48
 Description:
 '''
 import numpy as np
@@ -212,14 +212,20 @@ if __name__ == '__main__':
                 cur_fully_loaded_edge_nodes.append(sel_edge_node)
                 fully_loaded_edge_nodes_record[t].append(sel_edge_node)
 
-            else:
-                # Not fully loaded, restore allocation information
-                for client in kehu:
-                    restore_value = X[sel_edge_node][client]
-                    D[client][t] += restore_value
-                    W[sel_edge_node][t] -= restore_value
-                    X[sel_edge_node][client] -= restore_value
-                break
+            # if W[sel_edge_node][t] >= dam*C[sel_edge_node]:
+            #     # Fully loaded
+            #     fully_loaded_numbers[sel_edge_node] += 1
+            #     cur_fully_loaded_edge_nodes.append(sel_edge_node)
+            #     fully_loaded_edge_nodes_record[t].append(sel_edge_node)
+
+            # else:
+            #     # Not fully loaded, restore allocation information
+            #     for client in kehu:
+            #         restore_value = X[sel_edge_node][client]
+            #         D[client][t] += restore_value
+            #         W[sel_edge_node][t] -= restore_value
+            #         X[sel_edge_node][client] -= restore_value
+            #     break
         
 
         # Allocate remain demanding
@@ -304,6 +310,27 @@ if __name__ == '__main__':
         allocation_record[t] = X
     
     # print(fully_loaded_edge_nodes_record)
+
+    # Extend the fully loaded edge nodes in different timestamp
+    for t in range(T):
+
+        # Calculate the edge nodes has the capacity to be fully loaded
+        candid_fully_loaded_edge_nodes = []
+        for e_d, f_l_n in fully_loaded_numbers.items():
+            if f_l_n < maximum_fully_loaded_num:
+                candid_fully_loaded_edge_nodes.append(e_d)
+        
+        # TODO: Add the logic to select the number of extended fully loaded edge nodes considering the demanding of all clients. @lw-xjtu
+
+        # Sort candidate fully loaded edge nodes
+        candid_fully_loaded_edge_nodes = sorted(candid_fully_loaded_edge_nodes, key=lambda x:fully_loaded_numbers[x])
+
+        # Extend the fully loaded edge nodes to the average number
+        for can_edge_node in candid_fully_loaded_edge_nodes:
+            if len(fully_loaded_edge_nodes_record[t]) > maximum_fully_loaded_num:
+                break
+            if can_edge_node not in fully_loaded_edge_nodes_record[t] and len(fully_loaded_edge_nodes_record[t]) < maximum_fully_loaded_num:
+                fully_loaded_edge_nodes_record[t].append(can_edge_node)
     
     # Reallocation
     for t in range(T):
@@ -346,9 +373,10 @@ if __name__ == '__main__':
                         # Get the bandwidth between the client and edge node
                         cur_bandwidth = allocation_record[t][con_edge_node][cur_con_client]
 
-                        # DEBUG
-                        print('Designed fully loaded edge node: {}, connected client: {}, initial allocated edge node: {}, initial bandwidth: {}'.format(e_d, cur_con_client, con_edge_node, cur_bandwidth))
-                        # END DEBUG
+                        # # DEBUG
+                        # if cur_bandwidth != 0:
+                        #     print('Designed fully loaded edge node: {}, connected client: {}, initial allocated edge node: {}, initial bandwidth: {}'.format(e_d, cur_con_client, con_edge_node, cur_bandwidth))
+                        # # END DEBUG
                         
                         # Reallocation
                         if cur_bandwidth > 0:
@@ -383,6 +411,14 @@ if __name__ == '__main__':
                 if cur_X[edge_node][client] != 0:
                     resu.append('<{},{}>'.format(edge_node, cur_X[edge_node][client]))
             print(','.join(resu), file=solution)
+    
+    # # Ouput fullly loaded edges
+    # ans = 0
+    # for t in range(T):
+    #     ans += len(fully_loaded_edge_nodes_record[t])
+    # print(ans)
+    # print(fully_loaded_numbers)
+    # print(fully_loaded_edge_nodes_record)
     
     
     
