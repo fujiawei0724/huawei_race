@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-21 12:25:17
+LastEditTime: 2022-03-21 19:37:54
 Description:
 '''
 import numpy as np
@@ -355,6 +355,7 @@ if __name__ == '__main__':
                 break
             if can_edge_node not in fully_loaded_edge_nodes_record[t] and len(fully_loaded_edge_nodes_record[t]) < maximum_fully_loaded_num:
                 fully_loaded_edge_nodes_record[t].append(can_edge_node)
+                fully_loaded_numbers[can_edge_node] += 1
 
     # Reallocation
     for t in range(T):
@@ -435,13 +436,16 @@ if __name__ == '__main__':
                 if cur_X[edge_node][client] != 0:
                     resu.append('<{},{}>'.format(edge_node, cur_X[edge_node][client]))
             print(','.join(resu), file=solution)
+    
     fully_node = 0
     total_full = 0
     for edge_node in jiedian:
         if fully_loaded_numbers[edge_node] > 0:
             fully_node += 1
             total_full += fully_loaded_numbers[edge_node]
-    print('T:{},total_jiedian:{},fully_node:{},total_full:{}'.format(T, jiedian_number, fully_node, total_full))
+    # print('T:{},total_jiedian:{},fully_node:{},total_full:{}'.format(T, jiedian_number, fully_node, total_full))
+    # print(fully_loaded_edge_nodes_record)
+    
     # # Ouput fullly loaded edges
     # ans = 0
     # for t in range(T):
