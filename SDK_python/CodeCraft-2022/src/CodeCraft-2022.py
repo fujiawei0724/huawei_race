@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-21 12:22:48
+LastEditTime: 2022-03-21 12:25:17
 Description:
 '''
 import numpy as np
@@ -206,26 +206,26 @@ if __name__ == '__main__':
                         X[sel_edge_node][client] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
 
+            # if W[sel_edge_node][t] > 0:
+            #     # Fully loaded
+            #     fully_loaded_numbers[sel_edge_node] += 1
+            #     cur_fully_loaded_edge_nodes.append(sel_edge_node)
+            #     fully_loaded_edge_nodes_record[t].append(sel_edge_node)
+
             if W[sel_edge_node][t] >= dam*C[sel_edge_node]:
                 # Fully loaded
                 fully_loaded_numbers[sel_edge_node] += 1
                 cur_fully_loaded_edge_nodes.append(sel_edge_node)
                 fully_loaded_edge_nodes_record[t].append(sel_edge_node)
 
-            # if W[sel_edge_node][t] >= dam*C[sel_edge_node]:
-            #     # Fully loaded
-            #     fully_loaded_numbers[sel_edge_node] += 1
-            #     cur_fully_loaded_edge_nodes.append(sel_edge_node)
-            #     fully_loaded_edge_nodes_record[t].append(sel_edge_node)
-
-            # else:
-            #     # Not fully loaded, restore allocation information
-            #     for client in kehu:
-            #         restore_value = X[sel_edge_node][client]
-            #         D[client][t] += restore_value
-            #         W[sel_edge_node][t] -= restore_value
-            #         X[sel_edge_node][client] -= restore_value
-            #     break
+            else:
+                # Not fully loaded, restore allocation information
+                for client in kehu:
+                    restore_value = X[sel_edge_node][client]
+                    D[client][t] += restore_value
+                    W[sel_edge_node][t] -= restore_value
+                    X[sel_edge_node][client] -= restore_value
+                break
         
 
         # Allocate remain demanding
