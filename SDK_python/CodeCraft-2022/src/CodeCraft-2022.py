@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-20 18:57:42
+LastEditTime: 2022-03-21 10:25:56
 Description:
 '''
 import numpy as np
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # print(qos_constraint)
 
     # Calculate the maximum fully loaded numbers
-    maximum_fully_loaded_num = int(T * 0.04)
+    maximum_fully_loaded_num = int(T * 0.05)
 
     # Record the current fully loaded numbers of each edge node
     fully_loaded_numbers = defaultdict(int)
@@ -140,10 +140,6 @@ if __name__ == '__main__':
                 count_info[client].append(edge_node)
     # print(available_edge_nodes)
 
-    # allocation_record = dict()
-
-    solution = open('./output/solution.txt', 'w')
-
     W = defaultdict(list)
     for j in range(jiedian_number):
         for t in range(T):
@@ -153,6 +149,12 @@ if __name__ == '__main__':
     #     for j in range(jiedian_number):
     #         if Q[jiedian[j]][kehu[i]] < qos_constraint:
     #             count[kehu[i]] += 1
+
+    # Record the result of the first allocation
+    allocation_record = [dict() for _ in range(T)]
+
+    # Record the fully loaded edge nodes in different timestamp
+    fully_loaded_edge_nodes_record = [[] for _ in range(T)]
 
     for t in range(T):
 
@@ -204,10 +206,12 @@ if __name__ == '__main__':
                         X[sel_edge_node][client] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
 
-            if W[sel_edge_node][t] > dam*C[sel_edge_node]:
+            if W[sel_edge_node][t] >= dam*C[sel_edge_node]:
                 # Fully loaded
                 fully_loaded_numbers[sel_edge_node] += 1
                 cur_fully_loaded_edge_nodes.append(sel_edge_node)
+                fully_loaded_edge_nodes_record[t].append(sel_edge_node)
+
             else:
                 # Not fully loaded, restore allocation information
                 for client in kehu:
@@ -233,8 +237,6 @@ if __name__ == '__main__':
                 # print('Timestamp: {}, client: {} has no valid average allocation edge nodes.'.format(t, kehu[i]))
                 valid_ave_connected_edge_nodes_num = count[kehu[i]]
 
-            print('{}:'.format(kehu[i]), file=solution, end='')
-            resu = []
             # 剩余全部分配
             orginal = D[kehu[i]][t]
             for j in range(jiedian_number):
@@ -295,16 +297,110 @@ if __name__ == '__main__':
                     else:
                         continue
 
-                if X[jiedian[j]][kehu[i]] != 0:
-                    resu.append('<{},{}>'.format(jiedian[j], X[jiedian[j]][kehu[i]]))
+            #     if X[jiedian[j]][kehu[i]] != 0:
+            #         resu.append('<{},{}>'.format(jiedian[j], X[jiedian[j]][kehu[i]]))
+            # print(','.join(resu), file=solution)
+            # # print(res)
+        allocation_record[t] = X
+    
+    # print(fully_loaded_edge_nodes_record)
+    
+    # Reallocation
+    for t in range(T):
+        
+        # Get the edge nodes designed to be fully loaded at the timestamp
+        designed_fully_load_nodes = fully_loaded_edge_nodes_record[t]
+        for e_d in designed_fully_load_nodes:
+
+            # Check the whole bandwidth and the used bandwidth
+            cur_used_bandwidth = W[e_d][t]
+            cur_all_bandwidth = C[e_d]
+
+            # # DEBUG
+            # print('For designed fully edge node: {}, all bandwidth is: {}, used bandwidth is: {}'.format(e_d, cur_all_bandwidth, cur_used_bandwidth))
+            # # END DEBUG
+
+            # Exist available bandwidth for a designed fully loaded edeg node
+            if cur_used_bandwidth < cur_all_bandwidth: 
+
+                # Calculate the remained bandwidth
+                remained_available_bandwidth = cur_all_bandwidth - cur_used_bandwidth
+                
+                # Get all the clients connect with the current edge node
+                connected_clients = connected_info[e_d]
+
+                for cur_con_client in connected_clients:
+
+                    # Judge remain bandwidth
+                    if remained_available_bandwidth == 0:
+                        break
+                        
+                    # Get the current allocatiuon situation for the current client
+                    # Get the connected edge nodes with current client 
+                    for con_edge_node in count_info[cur_con_client]:
+
+                        # Judge the current connected node 
+                        if con_edge_node in designed_fully_load_nodes:
+                            continue
+
+                        # Get the bandwidth between the client and edge node
+                        cur_bandwidth = allocation_record[t][con_edge_node][cur_con_client]
+
+                        # DEBUG
+                        print('Designed fully loaded edge node: {}, connected client: {}, initial allocated edge node: {}, initial bandwidth: {}'.format(e_d, cur_con_client, con_edge_node, cur_bandwidth))
+                        # END DEBUG
+                        
+                        # Reallocation
+                        if cur_bandwidth > 0:
+
+                            if cur_bandwidth <= remained_available_bandwidth:
+                                allocation_record[t][con_edge_node][cur_con_client] -= cur_bandwidth
+                                allocation_record[t][e_d][cur_con_client] += cur_bandwidth
+                                W[e_d][t] += cur_bandwidth
+                                W[con_edge_node][t] -= cur_bandwidth
+                                remained_available_bandwidth -= cur_bandwidth
+                            else:
+                                allocation_record[t][con_edge_node][cur_con_client] -= remained_available_bandwidth
+                                allocation_record[t][e_d][cur_con_client] += remained_available_bandwidth
+                                W[e_d][t] += remained_available_bandwidth
+                                W[con_edge_node][t] -= remained_available_bandwidth
+                                remained_available_bandwidth = 0
+
+                                # DEBUG
+                                assert W[e_d][t] == C[e_d]
+                                # END DEBUG
+
+                                break
+    
+    # Output result
+    solution = open('./output/solution.txt', 'w')
+    for t in range(T):
+        cur_X = allocation_record[t]
+        for client in kehu:
+            print('{}:'.format(client), file=solution, end='')
+            resu = []
+            for edge_node in jiedian:
+                if cur_X[edge_node][client] != 0:
+                    resu.append('<{},{}>'.format(edge_node, cur_X[edge_node][client]))
             print(','.join(resu), file=solution)
-            # print(res)
-    s = 0
-    for j in range(jiedian_number):
-        # 总带宽排序
-        W[jiedian[j]].sort()
-        s += W[jiedian[j]][int(T * 0.95)]
-    print(s)
+    
+    
+    
+
+
+
+                        
+                
+            
+        
+    
+    
+    # s = 0
+    # for j in range(jiedian_number):
+    #     # 总带宽排序
+    #     W[jiedian[j]].sort()
+    #     s += W[jiedian[j]][int(T * 0.95)]
+    # print(s)
     # print(W)
     # print(D)
     # print(X)
