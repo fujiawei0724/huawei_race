@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-21 19:37:54
+LastEditTime: 2022-03-22 09:40:06
 Description:
 '''
 import numpy as np
@@ -134,17 +134,8 @@ if __name__ == '__main__':
 
     # print(num)
 
-    # Calculate the maximum fully loaded numbers
-    maximum_fully_loaded_num = int(T * 0.05)
-    total_fully_num = maximum_fully_loaded_num * jiedian_number
-    sum_loaded_num = 0
-    # Record the current fully loaded numbers of each edge node
-    fully_loaded_numbers = defaultdict(int)
-    for edge_node in jiedian:
-        fully_loaded_numbers[edge_node] = 0
-
     # Record the connected clients number of a edge node and the available edge nodes for each client
-    connected_numer = defaultdict(int)
+    connected_number = defaultdict(int)
     connected_info = defaultdict(list)
     count = defaultdict(int)
     count_info = defaultdict(list)
@@ -152,13 +143,23 @@ if __name__ == '__main__':
     for edge_node in jiedian:
         for client in kehu:
             if Q[edge_node][client] < qos_constraint:
-                connected_numer[edge_node] += 1
+                connected_number[edge_node] += 1
                 connected_info[edge_node].append(client)
                 count[client] += 1
                 count_info[client].append(edge_node)
-        if connected_numer[edge_node] == 0:
+        if connected_number[edge_node] == 0:
             non_connected_num += 1
-    # print(available_edge_nodes)
+
+    # Calculate the maximum fully loaded numbers
+    maximum_fully_loaded_num = int(T * 0.05)
+    total_fully_num = maximum_fully_loaded_num * jiedian_number
+    sum_loaded_num = 0
+    # Record the current fully loaded numbers of each edge node
+    fully_loaded_numbers = defaultdict(int)
+    for edge_node in jiedian:
+        # if connected_numer[edge_node] != 0:
+        #     fully_loaded_numbers[edge_node] = 0
+        fully_loaded_numbers[edge_node] = 0
 
     W = defaultdict(list)
     for j in range(jiedian_number):
@@ -196,7 +197,7 @@ if __name__ == '__main__':
         available_num = min(num[t],len(cur_available_edge_nodes)-non_connected_num)
 
         # Sort the available edge nodes
-        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer, count_info, connected_info,available_num)
+        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_number, count_info, connected_info,available_num)
 
         # fully_loaded_edge_nodes_record[t].extend(sel_edge_nodes)
         # print(sel_edge_nodes)
@@ -341,7 +342,7 @@ if __name__ == '__main__':
         # Calculate the edge nodes has the capacity to be fully loaded
         candid_fully_loaded_edge_nodes = []
         for e_d, f_l_n in fully_loaded_numbers.items():
-            if f_l_n < maximum_fully_loaded_num:
+            if f_l_n < maximum_fully_loaded_num and connected_number[e_d] > 0:
                 candid_fully_loaded_edge_nodes.append(e_d)
 
         # TODO: Add the logic to select the number of extended fully loaded edge nodes considering the demanding of all clients. @lw-xjtu
