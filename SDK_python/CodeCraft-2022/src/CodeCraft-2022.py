@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-22 12:07:39
+LastEditTime: 2022-03-22 12:35:29
 Description:
 '''
 import numpy as np
@@ -334,36 +334,38 @@ if __name__ == '__main__':
             # print(','.join(resu), file=solution)
             # # print(res)
         allocation_record[t] = X
-    #
-    # # print(fully_loaded_edge_nodes_record)
-    #
-    # # Extend the fully loaded edge nodes in different timestamp
-    for t in range(T):
 
-        # Calculate the edge nodes has the capacity to be fully loaded
-        candid_fully_loaded_edge_nodes = []
-        for e_d, f_l_n in fully_loaded_numbers.items():
-            if f_l_n < maximum_fully_loaded_num:
-                candid_fully_loaded_edge_nodes.append(e_d)
+    # Relabel the fully loaded edge nodes
+    # Initialize record 
+    relabeled_fully_edge_nodes_time_order = [[] for _ in range(T)]
 
-        # TODO: Add the logic to select the number of extended fully loaded edge nodes considering the demanding of all clients. @lw-xjtu
+    # Traverse edge nodes
+    for e_n in jiedian:
 
-        # Sort candidate fully loaded edge nodes
-        candid_fully_loaded_edge_nodes = sorted(candid_fully_loaded_edge_nodes, key=lambda x:fully_loaded_numbers[x])
+        # Filter the invalid edge node
+        if connected_numer[e_n] == 0:
+            continue
 
-        # Extend the fully loaded edge nodes to the average number
-        for can_edge_node in candid_fully_loaded_edge_nodes:
-            if len(fully_loaded_edge_nodes_record[t]) > maximum_fully_loaded_num:
-                break
-            if can_edge_node not in fully_loaded_edge_nodes_record[t] and len(fully_loaded_edge_nodes_record[t]) < maximum_fully_loaded_num:
-                fully_loaded_edge_nodes_record[t].append(can_edge_node)
-                fully_loaded_numbers[can_edge_node] += 1
+        # Read the allocation detail of current edge node
+        cur_allo_detail = W[e_n]
+
+        # Get the timestamps of the maximum five allocation values
+        cur_max_timestamps = np.argpartition(cur_allo_detail, -maximum_fully_loaded_num)[-maximum_fully_loaded_num:]
+
+
+        for cur_t in cur_max_timestamps:
+            relabeled_fully_edge_nodes_time_order[cur_t].append(e_n)
+    
+    # # DEBUG
+    # for t in range(T):
+    #     print(len(relabeled_fully_edge_nodes_time_order[t]))
+    # # END DEBUG
 
     # Reallocation
     for t in range(T):
 
         # Get the edge nodes designed to be fully loaded at the timestamp
-        designed_fully_load_nodes = fully_loaded_edge_nodes_record[t]
+        designed_fully_load_nodes = relabeled_fully_edge_nodes_time_order[t]
         for e_d in designed_fully_load_nodes:
 
             # Check the whole bandwidth and the used bandwidth
@@ -421,9 +423,9 @@ if __name__ == '__main__':
                                 W[con_edge_node][t] -= remained_available_bandwidth
                                 remained_available_bandwidth = 0
 
-                                # DEBUG
-                                assert W[e_d][t] == C[e_d]
-                                # END DEBUG
+                                # # DEBUG
+                                # assert W[e_d][t] == C[e_d]
+                                # # END DEBUG
 
                                 break
 
@@ -446,9 +448,9 @@ if __name__ == '__main__':
     #         fully_node += 1
     #         total_full += fully_loaded_numbers[edge_node]
     # print('T:{},total_jiedian:{},fully_node:{},total_full:{}'.format(T, jiedian_number, fully_node, total_full))
-    for edge_node in fully_loaded_edge_nodes_record[99]:
-        print('full_edge_node:{},client:'.format(edge_node),end = ' ')
-        print(connected_info[edge_node])
+    # for edge_node in fully_loaded_edge_nodes_record[99]:
+    #     print('full_edge_node:{},client:'.format(edge_node),end = ' ')
+    #     print(connected_info[edge_node])
     # print(fully_loaded_numbers)
     # # Ouput fullly loaded edges
     # ans = 0
