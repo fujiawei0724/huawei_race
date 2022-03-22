@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-21 19:37:54
+LastEditTime: 2022-03-22 12:07:39
 Description:
 '''
 import numpy as np
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     # print(available_edge_nodes)
     maximum_fully_loaded_num = int(T * 0.05)
     total_fully_num = maximum_fully_loaded_num * (jiedian_number - non_connected_num)
-    ave_num = int(total_fully_num/T)
+    ave_num = int(0.05 * jiedian_number)
     # print(ave_num)
     W = defaultdict(list)
     for j in range(jiedian_number):
