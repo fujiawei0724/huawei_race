@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-22 09:40:06
+LastEditTime: 2022-03-21 19:37:54
 Description:
 '''
 import numpy as np
@@ -115,7 +115,8 @@ if __name__ == '__main__':
             total_kehu_demnd.append(a)
             b =  a/kehu_number
             max_kehu_demand.append(b)
-            num.append(max((total_kehu_demnd[i] / jiedian_ave), kehu_number))
+            num.append(math.ceil(total_kehu_demnd[i] / jiedian_ave))
+    # print(num)
     with open('./data/qos.csv', 'rb') as q:
         data2 = np.loadtxt(q, str, delimiter=',')
         # Q[边缘节点][客户节点]=qos
@@ -134,8 +135,16 @@ if __name__ == '__main__':
 
     # print(num)
 
+    # Calculate the maximum fully loaded numbers
+
+
+    # Record the current fully loaded numbers of each edge node
+    fully_loaded_numbers = defaultdict(int)
+    for edge_node in jiedian:
+        fully_loaded_numbers[edge_node] = 0
+
     # Record the connected clients number of a edge node and the available edge nodes for each client
-    connected_number = defaultdict(int)
+    connected_numer = defaultdict(int)
     connected_info = defaultdict(list)
     count = defaultdict(int)
     count_info = defaultdict(list)
@@ -143,24 +152,17 @@ if __name__ == '__main__':
     for edge_node in jiedian:
         for client in kehu:
             if Q[edge_node][client] < qos_constraint:
-                connected_number[edge_node] += 1
+                connected_numer[edge_node] += 1
                 connected_info[edge_node].append(client)
                 count[client] += 1
                 count_info[client].append(edge_node)
-        if connected_number[edge_node] == 0:
+        if connected_numer[edge_node] == 0:
             non_connected_num += 1
-
-    # Calculate the maximum fully loaded numbers
+    # print(available_edge_nodes)
     maximum_fully_loaded_num = int(T * 0.05)
-    total_fully_num = maximum_fully_loaded_num * jiedian_number
-    sum_loaded_num = 0
-    # Record the current fully loaded numbers of each edge node
-    fully_loaded_numbers = defaultdict(int)
-    for edge_node in jiedian:
-        # if connected_numer[edge_node] != 0:
-        #     fully_loaded_numbers[edge_node] = 0
-        fully_loaded_numbers[edge_node] = 0
-
+    total_fully_num = maximum_fully_loaded_num * (jiedian_number - non_connected_num)
+    ave_num = int(total_fully_num/T)
+    # print(ave_num)
     W = defaultdict(list)
     for j in range(jiedian_number):
         for t in range(T):
@@ -194,10 +196,10 @@ if __name__ == '__main__':
                 cur_available_edge_nodes.append(edge_node)
         # if len(cur_available_edge_nodes) == 0:
         #     print('No available edge nodes.')
-        available_num = min(num[t],len(cur_available_edge_nodes)-non_connected_num)
+        available_num = min(num[t],len(cur_available_edge_nodes)-non_connected_num,ave_num)
 
         # Sort the available edge nodes
-        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_number, count_info, connected_info,available_num)
+        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer, count_info, connected_info,available_num)
 
         # fully_loaded_edge_nodes_record[t].extend(sel_edge_nodes)
         # print(sel_edge_nodes)
@@ -208,8 +210,8 @@ if __name__ == '__main__':
         for sel_edge_node in sel_edge_nodes:
 
             # Calculate parameter
-            # dam = max_kehu_demand[t]/C[sel_edge_node]
-            dam = 1
+            dam = max_kehu_demand[t]/C[sel_edge_node]
+            # dam = 1
 
             # Start allocation
             sel_edge_node_avail_bandwidth = C[sel_edge_node]
@@ -229,28 +231,27 @@ if __name__ == '__main__':
                         sel_edge_node_avail_bandwidth -= cur_client_demand
                         X[sel_edge_node][client] += cur_client_demand
                         W[sel_edge_node][t] += cur_client_demand
-
-            if W[sel_edge_node][t] > 0:
-                # Fully loaded
-                fully_loaded_numbers[sel_edge_node] += 1
-                sum_loaded_num += 1
-                cur_fully_loaded_edge_nodes.append(sel_edge_node)
-                fully_loaded_edge_nodes_record[t].append(sel_edge_node)
-
-            # if W[sel_edge_node][t] >= dam*C[sel_edge_node]:
+            #
+            # if W[sel_edge_node][t] > 0:
             #     # Fully loaded
             #     fully_loaded_numbers[sel_edge_node] += 1
             #     cur_fully_loaded_edge_nodes.append(sel_edge_node)
-            #
-            #
-            # else:
-            #     # Not fully loaded, restore allocation information
-            #     for client in kehu:
-            #         restore_value = X[sel_edge_node][client]
-            #         D[client][t] += restore_value
-            #         W[sel_edge_node][t] -= restore_value
-            #         X[sel_edge_node][client] -= restore_value
-            #     break
+            #     fully_loaded_edge_nodes_record[t].append(sel_edge_node)
+
+            if W[sel_edge_node][t] >= dam*C[sel_edge_node]:
+                # Fully loaded
+                fully_loaded_numbers[sel_edge_node] += 1
+                cur_fully_loaded_edge_nodes.append(sel_edge_node)
+                fully_loaded_edge_nodes_record[t].append(sel_edge_node)
+
+            else:
+                # Not fully loaded, restore allocation information
+                for client in kehu:
+                    restore_value = X[sel_edge_node][client]
+                    D[client][t] += restore_value
+                    W[sel_edge_node][t] -= restore_value
+                    X[sel_edge_node][client] -= restore_value
+                break
 
 
         # Allocate remain demanding
@@ -262,7 +263,7 @@ if __name__ == '__main__':
             for con_edge_node in cur_connected_edge_node:
                 if con_edge_node not in cur_fully_loaded_edge_nodes:
                     valid_ave_connected_edge_nodes_num += 1
-            
+
             # Mandatory average allocation flag
             if valid_ave_connected_edge_nodes_num == 0:
                 # print('Timestamp: {}, client: {} has no valid average allocation edge nodes.'.format(t, kehu[i]))
@@ -333,16 +334,16 @@ if __name__ == '__main__':
             # print(','.join(resu), file=solution)
             # # print(res)
         allocation_record[t] = X
-    
-    # print(fully_loaded_edge_nodes_record)
-
-    # Extend the fully loaded edge nodes in different timestamp
+    #
+    # # print(fully_loaded_edge_nodes_record)
+    #
+    # # Extend the fully loaded edge nodes in different timestamp
     for t in range(T):
 
         # Calculate the edge nodes has the capacity to be fully loaded
         candid_fully_loaded_edge_nodes = []
         for e_d, f_l_n in fully_loaded_numbers.items():
-            if f_l_n < maximum_fully_loaded_num and connected_number[e_d] > 0:
+            if f_l_n < maximum_fully_loaded_num:
                 candid_fully_loaded_edge_nodes.append(e_d)
 
         # TODO: Add the logic to select the number of extended fully loaded edge nodes considering the demanding of all clients. @lw-xjtu
@@ -425,7 +426,7 @@ if __name__ == '__main__':
                                 # END DEBUG
 
                                 break
-    
+
     # Output result
     solution = open('./output/solution.txt', 'w')
     for t in range(T):
@@ -438,21 +439,23 @@ if __name__ == '__main__':
                     resu.append('<{},{}>'.format(edge_node, cur_X[edge_node][client]))
             print(','.join(resu), file=solution)
     
-    fully_node = 0
-    total_full = 0
-    for edge_node in jiedian:
-        if fully_loaded_numbers[edge_node] > 0:
-            fully_node += 1
-            total_full += fully_loaded_numbers[edge_node]
+    # fully_node = 0
+    # total_full = 0
+    # for edge_node in jiedian:
+    #     if fully_loaded_numbers[edge_node] > 0:
+    #         fully_node += 1
+    #         total_full += fully_loaded_numbers[edge_node]
     # print('T:{},total_jiedian:{},fully_node:{},total_full:{}'.format(T, jiedian_number, fully_node, total_full))
-    # print(fully_loaded_edge_nodes_record)
-    
+    for edge_node in fully_loaded_edge_nodes_record[99]:
+        print('full_edge_node:{},client:'.format(edge_node),end = ' ')
+        print(connected_info[edge_node])
+    # print(fully_loaded_numbers)
     # # Ouput fullly loaded edges
     # ans = 0
     # for t in range(T):
     #     ans += len(fully_loaded_edge_nodes_record[t])
     # print(ans)
-    # # print(fully_loaded_numbers)
+    # print(fully_loaded_numbers)
     # print(fully_loaded_edge_nodes_record)
     #
     # s = 0
