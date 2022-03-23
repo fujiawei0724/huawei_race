@@ -164,7 +164,8 @@ if __name__ == '__main__':
         if connected_numer[edge_node] == 0:
             non_connected_num += 1
     # print(available_edge_nodes)
-    maximum_fully_loaded_num = int(T * 0.05)
+    maximum_fully_loaded_num = int(T * 0.03)
+    max_num = int(T*0.05)
     total_fully_num = maximum_fully_loaded_num * (jiedian_number - non_connected_num)
     ave_num = int(total_fully_num/T)
     # print(ave_num)
@@ -216,7 +217,7 @@ if __name__ == '__main__':
 
             # Calculate parameter
             # dam = total_kehu_demnd[t]/C[sel_edge_node]
-            # dam = ave_kehu_demand[t]*length_sel_num/C[sel_edge_node]
+            # dam = mid_kehu_demand[t]/C[sel_edge_node]
             dam = 0.05
 
             # Start allocation
@@ -342,7 +343,7 @@ if __name__ == '__main__':
         allocation_record[t] = X
     # print(fully_loaded_edge_nodes_record)
     epoch = 0
-    while epoch < 500:
+    while epoch < 320:
     # Relabel the fully loaded edge nodes
     # Initialize record
         relabeled_fully_edge_nodes_time_order = [[] for _ in range(T)]
@@ -358,7 +359,7 @@ if __name__ == '__main__':
             cur_allo_detail = W[e_n]
 
             # Get the timestamps of the maximum five allocation values
-            cur_max_timestamps = np.argpartition(cur_allo_detail, -maximum_fully_loaded_num)[-maximum_fully_loaded_num:]
+            cur_max_timestamps = np.argpartition(cur_allo_detail, -max_num)[-max_num:]
 
             for cur_t in cur_max_timestamps:
                 relabeled_fully_edge_nodes_time_order[cur_t].append(e_n)
