@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-22 12:35:29
+LastEditTime: 2022-03-23 12:12:55
 Description:
 '''
 import numpy as np
@@ -406,8 +406,11 @@ if __name__ == '__main__':
 
                         # Get the current allocatiuon situation for the current client
                         # Get the connected edge nodes with current client
-                        # count_info = dict(sorted(connected_info.items(),key= lambda x:W[x[0]][t],reverse=True))
-                        for con_edge_node in count_info[cur_con_client]:
+                        # count_info = dict(sorted(connected_info.items(),key= lambda x:W[x[0]][t],reverse=True))0
+
+                        other_con_edge_nodes = sorted(count_info[cur_con_client], key=lambda x:(W[x][t]/C[x]), reverse=True)
+
+                        for con_edge_node in other_con_edge_nodes:
                             # Judge the current connected node
                             # if con_edge_node in designed_fully_load_nodes:
                             #     continue
@@ -421,7 +424,7 @@ if __name__ == '__main__':
                             # # END DEBUG
 
                             # Reallocation
-                            if cur_bandwidth > 0 and cur_bandwidth <cur_all_bandwidth :
+                            if cur_bandwidth > 0 and cur_bandwidth < cur_all_bandwidth :
                                 jusitfy_all_bandwith[e_d] = True
                                 if cur_bandwidth <= remained_available_bandwidth:
                                     allocation_record[t][con_edge_node][cur_con_client] -= cur_bandwidth
