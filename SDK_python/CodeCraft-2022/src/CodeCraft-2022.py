@@ -2,7 +2,7 @@
 Author: fujiawei0724
 Date: 2022-03-18 09:27:23
 LastEditors: fujiawei0724
-LastEditTime: 2022-03-20 12:07:54
+LastEditTime: 2022-03-26 11:16:58
 Description:
 '''
 import numpy as np
@@ -139,21 +139,21 @@ if __name__ == '__main__':
                 Tools.addtwodimdict(X, jiedian[i], kehu[j], 0)
 
         # Get the available edge nodes and its band width
-        cur_available_edge_nodes = []
-        for edge_node in jiedian:
-            if fully_loaded_numbers[edge_node] < maximum_fully_loaded_num:
-                cur_available_edge_nodes.append(edge_node)
+        # cur_available_edge_nodes = []
+        # for edge_node in jiedian:
+        #     if fully_loaded_numbers[edge_node] < maximum_fully_loaded_num:
+        #         cur_available_edge_nodes.append(edge_node)
         # if len(cur_available_edge_nodes) == 0:
         #     print('No available edge nodes.')
 
-        # Sort the available edge nodes
-        sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer)
-        # print(sel_edge_nodes0
+        # # Sort the available edge nodes
+        # sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer)
+        # print(sel_edge_nodes)
+
         # Allocate remain demanding
         for i in range(kehu_number):
             # 剩余全部分配
-            orginal = np.random.randint(0.5 * D[kehu[i]][t] // count[kehu[i]], 1.5 * D[kehu[i]][t] // count[kehu[i]],
-                                        count[kehu[i]])
+            orginal = (np.random.uniform(0.5, 1.5, count[kehu[i]]) * D[kehu[i]][t] // count[kehu[i]]).astype(int)
             # print(D[kehu[i]][t])
             # print(orginal)
             k = 0
@@ -221,6 +221,10 @@ if __name__ == '__main__':
                         continue
         allocation_record[t] = X
     relabeled_fully_edge_nodes_time_order = [[] for _ in range(T)]
+
+    # Initialize best allocation and the corresponding score
+    optimal_s = np.inf
+    optimal_allocation = [dict() for _ in range(T)]
 
     # # Traverse edge nodes
     epoch = 0
@@ -323,10 +327,41 @@ if __name__ == '__main__':
                                     break
         epoch += 1
 
+        # Calculate score
+        cur_s = 0
+        for j in range(jiedian_number):
+            # 总带宽排序
+            W[jiedian[j]].sort()
+            cur_s += W[jiedian[j]][math.ceil(T * 0.95)]
+
+        if cur_s < optimal_s:
+            
+            # DEBUG
+            print('Update at t: {}, updated score: {}'.format(epoch, cur_s))
+            # END DEBUG
+
+            # Update information
+            optimal_s = cur_s
+            
+
+            
+            # Supply data
+            for r_t in range(T):
+                # Initialization
+                r_X = defaultdict(int)
+                for i in range(jiedian_number):
+                    for j in range(kehu_number):
+                        Tools.addtwodimdict(r_X, jiedian[i], kehu[j], 0)
+                optimal_allocation[r_t] = r_X
+                for r_edge_node in jiedian:
+                    for r_client in kehu:
+                        optimal_allocation[r_t][r_edge_node][r_client] = allocation_record[r_t][r_edge_node][r_client]
+
+
     # Output result
     solution = open('./output/solution.txt', 'w')
     for t in range(T):
-        cur_X = allocation_record[t]
+        cur_X = optimal_allocation[t]
         for client in kehu:
             print('{}:'.format(client), file=solution, end='')
             resu = []
