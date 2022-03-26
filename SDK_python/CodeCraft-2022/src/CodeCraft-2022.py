@@ -37,14 +37,14 @@ class Tools:
 if __name__ == '__main__':
     config = configparser.ConfigParser()  # 类实例化
     # 定义参数文件路径
-    path = '/data/config.ini'
+    path = './data/config.ini'
     config.read(path)
     # 导入参数配置
     qos_constraint = int(config.get('config', 'qos_constraint'))
     # print(qos_constraint)
     # qos_constraint = 400
     # 客户
-    with open('/data/demand.csv', 'rb') as f:
+    with open('./data/demand.csv', 'rb') as f:
         data = np.loadtxt(f, str, delimiter=",")
         # 客户名称
         kehu = data[0][1:]
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             a =  a/kehu_number
             max_kehu_demand.append(a)
 
-    with open('/data/site_bandwidth.csv', 'rb') as s:
+    with open('./data/site_bandwidth.csv', 'rb') as s:
         data1 = np.loadtxt(s, str, delimiter=",")
         jiedian_number = len(data1[1:])
         # 边缘节点名称
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         for i in range(jiedian_number):
             jiedian.append(data1[i + 1][0])
             C[data1[i + 1][0]] = int(data1[i + 1][1])
-    with open('/data/qos.csv', 'rb') as q:
+    with open('./data/qos.csv', 'rb') as q:
         data2 = np.loadtxt(q, str, delimiter=',')
         # Q[边缘节点][客户节点]=qos
         Q = defaultdict(int)
@@ -148,49 +148,16 @@ if __name__ == '__main__':
 
         # Sort the available edge nodes
         sel_edge_nodes = Tools.select_edge_nodes(cur_available_edge_nodes, connected_numer)
-        # print(sel_edge_nodes)
-
-        for sel_edge_node in sel_edge_nodes:
-
-            # Calculate parameter
-            dam = 1.1
-            # dam = 1
-
-            # Start allocation
-            sel_edge_node_avail_bandwidth = C[sel_edge_node]
-            # print(sel_edge_node_avail_bandwidth)
-            kehu = sorted(kehu, key=lambda x:D[x][t], reverse=True)
-            for client in kehu:
-                cur_client_demand = D[client][t]
-                if Q[sel_edge_node][client] < qos_constraint:
-                    if sel_edge_node_avail_bandwidth < cur_client_demand:
-                        D[client][t] -= sel_edge_node_avail_bandwidth
-                        X[sel_edge_node][client] += sel_edge_node_avail_bandwidth
-                        W[sel_edge_node][t] += sel_edge_node_avail_bandwidth
-                        sel_edge_node_avail_bandwidth = 0
-                        break
-                    else:
-                        D[client][t] -= cur_client_demand
-                        sel_edge_node_avail_bandwidth -= cur_client_demand
-                        X[sel_edge_node][client] += cur_client_demand
-                        W[sel_edge_node][t] += cur_client_demand
-
-            if W[sel_edge_node][t] >= dam*C[sel_edge_node]:
-                # Fully loaded
-                fully_loaded_numbers[sel_edge_node] += 1
-            else:
-                # Not fully loaded, restore allocation information
-                for client in kehu:
-                    restore_value = X[sel_edge_node][client]
-                    D[client][t] += restore_value
-                    W[sel_edge_node][t] -= restore_value
-                    X[sel_edge_node][client] -= restore_value
-                break
-
+        # print(sel_edge_nodes0
         # Allocate remain demanding
         for i in range(kehu_number):
             # 剩余全部分配
-            orginal = D[kehu[i]][t]
+            orginal = np.random.randint(0.5 * D[kehu[i]][t] // count[kehu[i]], 1.5 * D[kehu[i]][t] // count[kehu[i]],
+                                        count[kehu[i]])
+            # print(D[kehu[i]][t])
+            # print(orginal)
+            k = 0
+            # np.random.shuffle(jiedian)
             for j in range(jiedian_number):
 
                 # if jiedian[j] == sel_edge_node:
@@ -208,18 +175,19 @@ if __name__ == '__main__':
                     if W[jiedian[j]][t] <= cur_bandwidth_maximum:
                         # 节点还能承受的带宽
                         rest = cur_bandwidth_maximum - W[jiedian[j]][t]
-                        if int(orginal / count[kehu[i]]) <= D[kehu[i]][t]:
-                            if rest >= int(orginal / count[kehu[i]]):
+                        if orginal[k] <= D[kehu[i]][t]:
+                            if rest >= orginal[k]:
                                 # 分配带宽
-                                X[jiedian[j]][kehu[i]] += int(orginal / count[kehu[i]])
+                                X[jiedian[j]][kehu[i]] += orginal[k]
                                 # 客户带宽分配完
-                                W[jiedian[j]][t] += int(orginal / count[kehu[i]])
-                                D[kehu[i]][t] -= int(orginal / count[kehu[i]])
+                                W[jiedian[j]][t] += orginal[k]
+                                D[kehu[i]][t] -= orginal[k]
+                                k += 1
                             else:
                                 X[jiedian[j]][kehu[i]] += rest
                                 W[jiedian[j]][t] += rest
                                 D[kehu[i]][t] -= rest
-
+                                k += 1
                     # 分配总带宽达到节点上限
                     else:
                         continue
@@ -356,7 +324,7 @@ if __name__ == '__main__':
         epoch += 1
 
     # Output result
-    solution = open('/output/solution.txt', 'w')
+    solution = open('./output/solution.txt', 'w')
     for t in range(T):
         cur_X = allocation_record[t]
         for client in kehu:
